@@ -30,3 +30,12 @@ cargo xtask build
 ```bash
 RUST_LOG=info cargo xtask run
 ```
+
+
+## list ebpf prog 
+
+To list the bpf programs
+
+```bash
+sudo bpftool prog list
+```
