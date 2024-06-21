@@ -1,0 +1,3 @@
+{
+  "rust-analyzer.linkedProjects": ["Cargo.toml", "rudrop-packet-ebpf/Cargo.toml"]
+}
