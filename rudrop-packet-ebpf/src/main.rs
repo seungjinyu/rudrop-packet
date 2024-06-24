@@ -13,7 +13,7 @@ use aya_log_ebpf::info;
 use core::mem;
 use network_types::{
     eth::{EthHdr, EtherType},
-    ip::Ipv4Hdr,
+    ip::{IpProto, Ipv4Hdr}, tcp::TcpHdr, udp::{self, UdpHdr},
 };
 
 
@@ -39,12 +39,26 @@ fn try_rudrop_packet(ctx: XdpContext) -> Result<u32, ()> {
     let ipv4hdr : *const Ipv4Hdr = unsafe { ptr_at(&ctx, EthHdr::LEN)?};
     let source = u32::from_be(unsafe {(*ipv4hdr).src_addr});
 
+    let source_port = match unsafe {(*ipv4hdr).proto } {
+        IpProto::Tcp => {
+            let tcphdr: *const TcpHdr = unsafe {ptr_at(&ctx, EthHdr::LEN + Ipv4Hdr::LEN)?};
+            u16::from_be( unsafe { (*tcphdr).source})
+        },
+        IpProto::Udp => {
+            let udphdr: *const UdpHdr = unsafe { ptr_at(&ctx , EthHdr::LEN + Ipv4Hdr::LEN)?};
+            u16::from_be( unsafe { (*udphdr).source})
+
+        },
+        _ => return Err(()),
+    };
+
     let action = if block_ip(source) {
         xdp_action::XDP_DROP
+        
     } else {
         xdp_action::XDP_PASS
     };
-    info!(&ctx  , "SRC: {:i} , ACTION: {}", source, action);
+    info!(&ctx  , "SRC: {:i} , ACTION: {}, PORT {}", source, action, source_port);
     
     Ok(action)
 }
